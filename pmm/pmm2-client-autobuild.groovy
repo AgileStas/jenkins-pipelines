@@ -135,29 +135,9 @@ pipeline {
             }
         }
 
-        stage('Build client source deb') {
-            steps {
-                sh 'sg docker -c "./build/bin/build-client-sdeb ubuntu:xenial"'
-                stash includes: 'results/source_deb/*', name: 'debs'
-                uploadDEB()
-            }
-        }
-        stage('Build client binary debs') {
-            steps {
-                sh 'sg docker -c "./build/bin/build-client-deb debian:buster"'
-                sh 'sg docker -c "./build/bin/build-client-deb debian:stretch"'
-                sh 'sg docker -c "./build/bin/build-client-deb debian:bullseye"'
-                sh 'sg docker -c "./build/bin/build-client-deb ubuntu:bionic"'
-                sh 'sg docker -c "./build/bin/build-client-deb ubuntu:xenial"'
-                sh 'sg docker -c "./build/bin/build-client-deb ubuntu:focal"'
-                stash includes: 'results/deb/*.deb', name: 'debs'
-                uploadDEB()
-            }
-        }
         stage('Sign packages') {
             steps {
                 signRPM()
-                signDEB()
             }
         }
         stage('Push to public repository') {
@@ -174,24 +154,6 @@ pipeline {
                 sh '''
                     scp -i ~/.ssh/id_rsa_downloads -P 2222 -o ConnectTimeout=1 -o StrictHostKeyChecking=no results/tarball/*.tar.* jenkins@jenkins-deploy.jenkins-deploy.web.r.int.percona.com:/data/downloads/TESTING/pmm/
                 '''
-            }
-        }
-    }
-    post {
-        always {
-            script {
-                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
-                    slackSend botUser: true, channel: '#pmm-ci', color: '#00FF00', message: "[${JOB_NAME}]: build finished, pushed to ${DESTINATION} repo - ${BUILD_URL}"
-                    slackSend botUser: true, channel: '@nailya.kutlubaeva', color: '#00FF00', message: "[${JOB_NAME}]: build finished, pushed to ${DESTINATION} repo"
-                    if ("${DESTINATION}" == "testing")
-                    {
-                      currentBuild.description = "Release Candidate Build"
-                      slackSend botUser: true, channel: '#pmm-qa', color: '#00FF00', message: "[${JOB_NAME}]: ${BUILD_URL} Release Candidate build finished"
-                    }
-                } else {
-                    slackSend botUser: true, channel: '#pmm-ci', color: '#FF0000', message: "[${JOB_NAME}]: build ${currentBuild.result} - ${BUILD_URL}"
-                    slackSend botUser: true, channel: '#pmm-qa', color: '#FF0000', message: "[${JOB_NAME}]: build ${currentBuild.result} - ${BUILD_URL}"
-                }
             }
         }
     }
