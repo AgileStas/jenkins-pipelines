@@ -50,7 +50,7 @@ pipeline {
         stage ('Install build tools') {
             steps {
                 sh """
-                    curl "https://github.com/percona/percona-backup-mongodb/blob/main/packaging/scripts/mongodb-backup_builder.sh" -o "mongodb-backup_builder.sh"
+                    curl "https://raw.githubusercontent.com/percona/percona-backup-mongodb/main/packaging/scripts/mongodb-backup_builder.sh" -o "mongodb-backup_builder.sh"
                     chmod +x mongodb-backup_builder.sh
                     mkdir /tmp/builddir
                     sudo ./mongodb-backup_builder.sh --builddir=/tmp/builddir --install_deps=1
